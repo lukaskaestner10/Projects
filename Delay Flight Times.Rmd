@@ -1,0 +1,97 @@
+---
+title: "R Exercise 5"
+author: "Lukas Kaestner"
+output: html_notebook
+---
+
+
+```{r echo=TRUE}
+library(tidyverse)
+library(ggforce)
+library(nycflights13)
+library(lubridate)
+rm(list = ls())
+
+flights.df = flights
+
+```
+
+1.
+```{r echo=TRUE}
+
+departure_date = make_date(flights$year, flights$month, flights$day)
+
+m.delay_each_day.df = flights %>%
+  mutate(departure_date) %>%
+  group_by(departure_date) %>%
+  summarise(m.dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  mutate(y_day = yday(departure_date))
+
+ggplot(data = m.delay_each_day.df, aes(y_day, m.dep_delay), group = origin) +
+  geom_line() +
+  geom_smooth(span = .2) +
+  labs(title = "There are large fluctuations in delay time over the course of the year", 
+       x = "Day of the year", y = "Mean delay (minutes)") +
+  theme_classic()
+```
+
+Delay times can be seen to fluctuate quite a bit over the course of the year. Other than a few spikes, the average delay times every day are under 45 minutes. 
+
+2.
+```{r echo=TRUE}
+
+w_day = wday(departure_date)
+
+m.delay_day_of_week.df = flights %>%
+  mutate(departure_date) %>%
+  group_by(departure_date) %>%
+  summarise(m.dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  mutate(w_day = wday(departure_date), month_num = month(departure_date)) %>%
+  group_by(month_num, w_day) %>%
+  summarise(m.wday_delay = mean(m.dep_delay, na.rm = TRUE))
+
+ggplot(data = m.delay_day_of_week.df, aes(w_day, m.wday_delay)) +
+  geom_line() +
+  facet_wrap(m.delay_day_of_week.df$month_num, nrow = 1, ncol = 12) +
+  geom_hline(data = m.delay_day_of_week.df, aes(yintercept = mean(m.wday_delay)), colour ="grey75") +
+  labs(title ="Delays tend to fluctuate a lot throughout the week",
+       x = "Day of the week for each month", y = "Mean delay (minutes)") +
+  theme_classic()
+
+```
+
+We can see that delays generally are longer in the middle months of the year. We can also see that within each month, delays tend to be shorter on the last day of the week. It does appear there might be a general trend of increasing to start the week and decreasing to end the week. 
+
+3.
+```{r echo=TRUE}
+
+hour_of_day = flights %>% mutate(hour(flights$time_hour))
+
+m.delay_hour_of_day.df = flights %>%
+  mutate(departure_date, hour) %>%
+  group_by(departure_date, hour) %>%
+  summarise(m.dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  mutate(w_day = wday(departure_date)) %>%
+  group_by(hour, w_day) %>%
+  summarise(m.hday_delay = mean(m.dep_delay, na.rm = TRUE))
+  
+m.delay_hour_of_day.df = m.delay_hour_of_day.df[-c(1),]
+
+ggplot(data = m.delay_hour_of_day.df, aes(hour, m.hday_delay)) +
+  geom_line() +
+  facet_wrap(m.delay_hour_of_day.df$w_day, nrow = 1, ncol = 7) +
+  geom_hline(data = m.delay_hour_of_day.df, aes(yintercept = mean(m.hday_delay)), colour ="grey75") +
+  labs(title ="Delays are drastically longer in the afternoon and evening",
+       x = "Hour of the day for each week", y = "Mean delay (minutes)") +
+  theme_classic()
+
+```
+
+There is a clear pattern that as the day goes on, delays get longer and longer until the very end when less flights are leaving. I also suspect that on the last day of the week, there are less flights causing delay times to be shorter than other days. 
+
+Based on these 3 graphs, it is quite clear that the hour of the day effects the delay time tremendously. Flights in the morning are seen to be under the average consistently across all days and 6 of the 7 days have afternoon and evening flights with high delay time averages.
+
+Another way to show the likelihood of travel disrupt is binning the flight delays into severity. Generally a delay less than 45 minutes won't disrupt any connecting flights too much but having a longer delay could cause some larger issues. The number of bins and widths could be adjusted after further research but the graph would then be able to show the severity of delay rather than a time value.
+
+
+
