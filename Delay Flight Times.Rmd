@@ -16,7 +16,7 @@ flights.df = flights
 
 ```
 
-1.
+
 ```{r echo=TRUE}
 
 departure_date = make_date(flights$year, flights$month, flights$day)
@@ -37,7 +37,7 @@ ggplot(data = m.delay_each_day.df, aes(y_day, m.dep_delay), group = origin) +
 
 Delay times can be seen to fluctuate quite a bit over the course of the year. Other than a few spikes, the average delay times every day are under 45 minutes. 
 
-2.
+
 ```{r echo=TRUE}
 
 w_day = wday(departure_date)
@@ -62,7 +62,7 @@ ggplot(data = m.delay_day_of_week.df, aes(w_day, m.wday_delay)) +
 
 We can see that delays generally are longer in the middle months of the year. We can also see that within each month, delays tend to be shorter on the last day of the week. It does appear there might be a general trend of increasing to start the week and decreasing to end the week. 
 
-3.
+
 ```{r echo=TRUE}
 
 hour_of_day = flights %>% mutate(hour(flights$time_hour))
